@@ -1,12 +1,13 @@
 import threading
 from threading import Thread
 import time
+import timehandler
 
 
 import cv2
 import numpy as np
-import pandas as pd
-import matplotlib.pyplot as plt
+#import pandas as pd
+#import matplotlib.pyplot as plt
 
 import tensorflow as tf
 from tensorflow.keras.preprocessing import image
@@ -15,7 +16,6 @@ from tensorflow.keras.applications.mobilenet_v2 import preprocess_input
 
 label = np.load('label.npy')
 label = np.unique(label)
-
 
 
 #This is interpreter for MobileNetV2_with_Preprocessing
@@ -29,6 +29,12 @@ interpreter2 = tf.lite.Interpreter(model_path='gru.tflite')
 interpreter2.allocate_tensors()
 input_details2 = interpreter2.get_input_details()
 output_details2 = interpreter2.get_output_details()
+
+th = timehandler.DateTimeHandler()
+th.printDateTimeBeautifully(th.current_time)
+th.printDateTimeBeautifully(th.capture_time)
+th.printDateTimeBeautifully(th.feature_time)
+
 
 
 #Following is the pipeline for image capturing with cam
@@ -77,8 +83,10 @@ def captureFrames() :
         #it=it+1
 
         f= f+1    
-        cv2.imwrite('/home/ghost/thesis/cam/pic/'+str(f)+'.jpg',gray)
-
+        cv2.imwrite('/home/ghost/thesis/cam/pic/'+th.returnDateTimeString(th.capture_time)+'_'+str(f)+'.jpg',gray)
+        if f == 4:
+            f = 0
+            th.getNextSecond(th.capture_time)
         if cv2.waitKey(1) & 0xFF == ord('q'):
             break
 
@@ -87,42 +95,51 @@ def captureFrames() :
     cv2.destroyAllWindows()
 
 
+def frameToFeature(img):
+    seq = list()
+    img = image.img_to_array(img,dtype=np.float32)
+    seq.append(img)
+    seq = np.array(seq,dtype=np.float32)
+
+    interpreter1.set_tensor(input_details1[0]["index"], seq)   # seq is the input
+    interpreter1.invoke()
+    feature = interpreter1.get_tensor(output_details1[0]["index"])
+    #print("feature {} extracted".format(i))
+    feature = feature.reshape(-1)
+    return feature
+
 #The following keeps printing work.
 def detect():
-    time.sleep(5)
+    time.sleep(10)
     feature_seq = list()            #This will containg[1,20,7*7*1280]
-    starting_frame = 1
+    
 
-    i = 1
     while True:
-        seq = list() 
                                    #List of frame
+
+        current_detection_time = th.returnDateTimeString(th.feature_time)
 
         #Try to load current image
         try:
-            img = image.load_img('pic/{}.jpg'.format(i), target_size=(224, 224))
+            frame1 = image.load_img('pic/{}_{}.jpg'.format(current_detection_time,1), target_size=(224, 224))
+            frame2 = image.load_img('pic/{}_{}.jpg'.format(current_detection_time,2), target_size=(224, 224))
+            frame3 = image.load_img('pic/{}_{}.jpg'.format(current_detection_time,3), target_size=(224, 224))
+            frame4 = image.load_img('pic/{}_{}.jpg'.format(current_detection_time,4), target_size=(224, 224))
         except:
             time.sleep(2)
-            img = image.load_img('pic/{}.jpg'.format(i), target_size=(224, 224))
-
-        i++         # Next image
-        img = image.img_to_array(img,dtype=np.float32)
-        seq.append(img)
-        seq = np.array(seq,dtype=np.float32)
-
-        interpreter1.set_tensor(input_details1[0]["index"], seq)   # seq is the input
-        interpreter1.invoke()
-        feature = interpreter1.get_tensor(output_details1[0]["index"])  
+            continue
+            #img = image.load_img('pic/{}.jpg'.format(i), target_size=(224, 224))
 
 
-        print("feature {} extracted".format(i))
-        feature = feature.reshape(-1)
+        featurn_of_frame1 = frameToFeature(frame1)
+        featurn_of_frame2 = frameToFeature(frame2)
+        featurn_of_frame3 = frameToFeature(frame3)
+        featurn_of_frame4 = frameToFeature(frame4)
+        
+        
         if len(feature_seq)==20:
             print("20 element in feature_seq")
-            feature_seq.pop(0)
-        feature_seq.append(feature)
 
-        if i >=20 and i%4==0:  
             feature_seq_np = np.array(feature_seq,dtype=np.float32)
             feature_seq_np = feature_seq_np.reshape(-1,20,7*7*1280)
             print(feature_seq_np.shape)
@@ -133,13 +150,24 @@ def detect():
             activity = interpreter2.get_tensor(output_details2[0]["index"]) 
 
             #print("Work at frame {} is ".format(i), [np.argmax(activity)])
-            print("Work at frame {} is ".format(i), label[np.argmax(activity)])
+            print(np.argmax(activity))
+            print("Work at time {} is {}".format(current_detection_time, label[np.argmax(activity)]))
             #print(activity)
             f = open("work.txt", "a")
-            f.write("Work at frame {} is \n".format(i), label[np.argmax(activity)])
+            f.write("Work at time {} is {}\n".format(current_detection_time, label[np.argmax(activity)]))
             f.close()
             
             time.sleep(1)
+
+            feature_seq = feature_seq[4:]
+
+        feature_seq.append(featurn_of_frame1)
+        feature_seq.append(featurn_of_frame2)
+        feature_seq.append(featurn_of_frame3)
+        feature_seq.append(featurn_of_frame4)
+
+        th.getNextSecond(th.feature_time)
+        
 
 
 
