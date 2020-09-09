@@ -1,17 +1,20 @@
 from datetime import datetime
 import time
+
 def smallerThen(a,b):
+	"""This function takes two string number and return if A is smaller then B"""
 	if int(a) < int(b):
 		return True
 	else:
 	 return False
 
 def increaseOne(a):
+	'''This function takes a string number and increase it by one and return as xx format'''
 	return "{0:0>2}".format(str(int(a)+1))
 
 
 class DateTimeHolder:
-	'''This class simply just hold values of datetime'''
+	'''This class simply just hold values of datetime. It holds day,month,year,hour,minute,second'''
 	def __init__(self,day,month,year,hour,minute,second):
  		self.day = day
  		self.month = month
@@ -21,6 +24,7 @@ class DateTimeHolder:
  		self.second = second
 
 def getCurrentDateTime():
+	'''On calling this returns current datetime as DateTimeHolder class.'''
 	now = datetime.now()
 	dt_string = now.strftime("%d/%m/%Y %H:%M:%S")
 	dt_string = dt_string.split(' ')
@@ -34,7 +38,7 @@ def getCurrentDateTime():
 
 
 class DateTimeHandler:
-	'''A time handler holds current time, current frame capture time and feature extraction time'''
+	'''A time handler holds current time, current frame capture time and feature extraction time.'''
 	def __init__(self):
 		self.temp = getCurrentDateTime()
 		self.current_time = self.temp
@@ -44,13 +48,15 @@ class DateTimeHandler:
 
 
 	def printDateTimeBeautifully(self,timeholder):
+		"""This just simply prints a timeholder's data from a DateTimeHandler's timeholder. """
 		print("Day: {}, Month: {}, Year: {}, Hour: {} , Minute: {}, Second: {}".format(timeholder.day,timeholder.month,timeholder.year,timeholder.hour,timeholder.minute,timeholder.second))
 	
 	def returnDateTimeString(self,timeholder):
+		"""Returns a timeholder's data as string in {day_month_year_hour_munite_second} format."""
 		return ("{}_{}_{}_{}_{}_{}".format(timeholder.day,timeholder.month,timeholder.year,timeholder.hour,timeholder.minute,timeholder.second))
 
 	def getNextSecond(self,timeholder):
-		'''Given a DateTimeHandler\'s time, it updates the time to next second 
+		'''Given a DateTimeHandler\'s timeholder, it updates the time to next second 
 			
 			Ex: dth.getNextSecond(dt.current_time)
 		'''
@@ -91,14 +97,3 @@ class DateTimeHandler:
 # 	dt.printDateTimeBeautifully(dt.feature_time)
 # time.sleep(2)
 # dt.printDateTimeBeautifully(dt.current_time)
-
-	
-	
-
-
-
-
-# class Person:
-#   def __init__(self, name, age):
-#     self.name = name
-#     self.age = age
